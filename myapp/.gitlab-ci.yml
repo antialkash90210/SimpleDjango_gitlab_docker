@@ -1,0 +1,31 @@
+stages:
+  - test
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+services:
+  - docker:dind
+
+test:
+  stage: test
+  image: docker:20.10
+  script:
+    - apk add --no-cache python3 py3-pip
+    - pip3 install docker-compose
+    - docker-compose up -d db
+    - docker-compose run web python manage.py test
+  artifacts:
+    paths:
+      - test-reports/
+
+deploy_dev:
+  stage: deploy
+  image: docker:20.10
+  script:
+    - docker-compose down
+    - docker-compose up -d --build
+  only:
+    - develop
